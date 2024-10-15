@@ -5,12 +5,22 @@ function decimalFixed(decimal) {
     return decimal.toFixed(3)
 }
 
-function GramSchmidt(Matrixes) {
+function GramSchmidt(Matrixes, n) {
+    // Extract coordinates from the input vectors
     const matrixA = Matrixes.map(v => v.vecteur_coords);
-    const n = matrixA[0].length; // Assume all vectors have the same dimension
     const totalVectors = matrixA.length;
 
-    for (var i = 0; i < totalVectors; i++) {
+    // If fewer vectors than the specified dimension, add standard basis vectors
+    if (totalVectors < n) {
+        for (let i = totalVectors; i < n; i++) {
+            const newVector = Array(n).fill(0);
+            newVector[i] = 1; // Standard basis vector e_i
+            matrixA.push(newVector);
+        }
+    }
+
+    // Apply Gram-Schmidt process
+    for (var i = 0; i < n; i++) {
         var tempVector = matrixA[i];
         for (var j = 0; j < i; j++) {
             var dotProd = dot(tempVector, matrixA[j], n);
@@ -21,7 +31,7 @@ function GramSchmidt(Matrixes) {
         matrixA[i] = multiply(1 / nrm, tempVector, n).map(m => decimalFixed(m));
     }
 
-    return matrixA
+    return matrixA;
 }
 
 /* Simple vector arithmetic functions */
@@ -49,6 +59,10 @@ function dot(vectorX, vectorY, n) {
 
 function norm(vectorX, n) {
     return Math.sqrt(dot(vectorX, vectorX, n));
+}
+
+function decimalFixed(decimal) {
+    return decimal.toFixed(3);
 }
 
 const client = new Client({
@@ -114,7 +128,8 @@ client.on('message_create', async (message) => {
                     if (response.status == 200) {
                         const data = JSON.parse(response.data);
                         const vecteurs = data["vectors"];
-                        if (Array.isArray(vecteurs) && vecteurs.length > 1 && vecteurs.every(vecteur => vecteur.vecteur_coords.length === vecteurs.length)) {
+                        const dim=data["dim"];
+                        if (Array.isArray(vecteurs) && vecteurs.length > 1) {
                             let vecteursMessage = "• 📏Les vecteurs détectés sont :\n";
 
                             vecteurs.forEach(vecteur => {
@@ -122,7 +137,7 @@ client.on('message_create', async (message) => {
                                 const vecteurCoords = vecteur.vecteur_coords.join(',');
                                 vecteursMessage += `- *Vecteur ${vecteurId + 1}* de coordonnées *(${vecteurCoords})*\n`;
                             });
-                            vecteursMessage += "• 📐Dimension : *" + vecteurs.length.toString() + "*"
+                            vecteursMessage += "• 📐Dimension : *" + dim + "*"
                             sentMessage = message.reply(vecteursMessage);
                             garabage.push(sentMessage.id);
 
@@ -134,7 +149,7 @@ client.on('message_create', async (message) => {
                                 sentMessage = message.reply(`@${senderName}! Appliquons le *Gram-Schmidt* aux vecteurs trouvés... ⏳`);
                                 garabage.push(sentMessage.id);
                                 try {
-                                    const base_orthonormal = GramSchmidt(vecteurs);
+                                    const base_orthonormal = GramSchmidt(vecteurs,dim);
                                     var i = 0
                                     var res = `C\'est fini ${senderName}! 🎉\n\nLes vecteurs formant une B.O.N. en appliquant l\'algorithme de Gram-Schmidt sont : `;
                                     base_orthonormal.forEach(v => {
