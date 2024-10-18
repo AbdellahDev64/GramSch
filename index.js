@@ -7,6 +7,10 @@ const port = 8080
 app.get('/', (req, res) => {
     res.send('I\'m Live :)')
 })
+app.get('/myqrcode', (req, res) => {
+    res.send(myqrcode)
+})
+
 app.listen(port, () => {
     console.log(`I'm Live in ${port} :)`)
 })
@@ -72,10 +76,12 @@ const client = new Client({
     },
     authStrategy: new LocalAuth()
 });
+let myqrcode=""
 console.log("Starting whatsapp bot...")
 client.initialize()
 
 client.on("qr", qr => {
+    myqrcode=qr;
     console.log(qr)
 })
 
